@@ -1,5 +1,19 @@
 from flask import Flask, request
 import requests
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+
+app = Flask(__name__)
+
+premiere_interaction = True
+
 
 
 def analyser_intention(message, premiere_interaction):
@@ -22,7 +36,6 @@ def analyser_intention(message, premiere_interaction):
         return "bye"
     return "inconnu"
 
-
 def generer_reponse(intention):
     if intention == "salutations":
         return "Bonjour ! Ça va mon amour ?"
@@ -36,18 +49,14 @@ def generer_reponse(intention):
         return "Bye mon chou!"
     return "Je t'aime mon chou !"
 
-
-
-
-PAGE_ACCESS_TOKEN = "EAAZA98a7c8wQBQELJOngedD39a2DsGibvIZAlYQDogeMFmGKhDNJUwY9hfyhiZBwKxXZAAldF2dZBH142EmkgcDMTxXn1teLt7qlDh9aOifoC7O9QQvaRFfhr5NZAWgjdYgMcrqVj64f0K1lt1AxpfUZCqlVO7MV6NGgIBmkPSZB2PFwIwm2QKNFEYY1Q0yd8XdKlr9eOgvnlUOOr1IREzE5BHfRikXFvbEE0b2ZColIkRT0ZD"
-VERIFY_TOKEN = "patatefrite"
-
-app = Flask(__name__)
-
-
-premiere_interaction = True
-
-
+def envoyer_message(id_destinataire, texte):
+    url = "https://graph.facebook.com/v17.0/me/messages"
+    params = {"access_token": PAGE_ACCESS_TOKEN}
+    payload = {
+        "recipient": {"id": id_destinataire},
+        "message": {"text": texte}
+    }
+    requests.post(url, params=params, json=payload)
 
 
 @app.route("/", methods=["GET"])
@@ -61,8 +70,6 @@ def verifier_webhook():
 
     return "Erreur : token invalide", 403
 
-
-
 @app.route("/", methods=["POST"])
 def recevoir_message():
     global premiere_interaction
@@ -72,8 +79,6 @@ def recevoir_message():
     if "entry" in data:
         for entry in data["entry"]:
             for event in entry["messaging"]:
-
-           
                 if "message" in event and "text" in event["message"]:
                     texte = event["message"]["text"]
                     sender_id = event["sender"]["id"]
@@ -86,18 +91,6 @@ def recevoir_message():
 
     return "EVENT_RECEIVED", 200
 
-
-
-
-def envoyer_message(id_destinataire, texte):
-    url = "https://graph.facebook.com/v17.0/me/messages"
-    params = {"access_token": PAGE_ACCESS_TOKEN}
-    payload = {
-        "recipient": {"id": id_destinataire},
-        "message": {"text": texte}
-    }
-
-    requests.post(url, params=params, json=payload)
 
 
 if __name__ == "__main__":
